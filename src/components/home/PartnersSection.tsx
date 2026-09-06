@@ -26,13 +26,13 @@ const partners: Partner[] = [
   { name: "Ekya Schools", logo: "/collab/trimmed/ekya.png" },
   { name: "Kahaani Box", logo: "/collab/trimmed/kahaani.png" },
   { name: "Delhi Public School, Bangalore South", logo: "/collab/trimmed/dps.png" },
-  { name: "GRAT Lab", logo: "/collab/trimmed/grat.png" },
-  { name: "Samāgata Foundation", logo: "/collab/trimmed/samagata.png" },
+  { name: "GRAT Lab", logo: "/collab/trimmed/grat-v2.png" },
+  { name: "Samāgata Foundation", logo: "/collab/trimmed/samagata-v2.png" },
   { name: "Crafty", logo: "/collab/trimmed/crafty.png" },
   { name: "Gubbachi Learning Community", logo: "/collab/trimmed/gubbacchi.png" },
-  { name: "Brainy Stars", logo: "/collab/trimmed/brainystars.png" },
-  { name: "iGenius", logo: "/collab/trimmed/igenius.png" },
-  { name: "10Labs", logo: "/collab/trimmed/onezerolabs.png" },
+  { name: "Brainy Stars", logo: "/collab/trimmed/brainystars-v2.png" },
+  { name: "iGenius", logo: "/collab/trimmed/igenius-v2.png" },
+  { name: "10Labs", logo: "/collab/trimmed/onezerolabs-v2.png" },
 ];
 
 const accents = ["#7C3AED", "#00CDBA", "#FF5C7A", "#268bff"];
