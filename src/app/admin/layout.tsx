@@ -17,7 +17,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#7C3AED",
+  themeColor: "#ffffff",
   // Lets the shell paint under the notch and home indicator; the safe-area
   // insets below keep the content itself clear of them.
   viewportFit: "cover" as const,
