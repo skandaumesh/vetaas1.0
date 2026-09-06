@@ -126,7 +126,10 @@ export default function AdminSidebar() {
       {/* Mobile: a compact title bar plus a bottom tab bar, so the panel
           behaves like an installed app rather than a cramped desktop nav.
           Six text links in one row overflowed even a 390px screen. */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/75 backdrop-blur-xl border-b border-white/70 pt-[env(safe-area-inset-top)]">
+      {/* Opaque white, not translucent: the admin shell's tinted gradient shows
+          through a semi-transparent bar and stops it matching the white status
+          bar sitting directly above it. */}
+      <header className="md:hidden sticky top-0 z-40 bg-white border-b border-gray-200/70 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-2.5 px-4 h-14">
           <Image src="/icon.png" alt="" width={28} height={28} className="rounded-md shrink-0" />
           <div className="min-w-0 flex-1">
