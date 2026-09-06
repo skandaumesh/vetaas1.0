@@ -42,7 +42,10 @@ function PartnerTile({ partner, index }: { partner: Partner; index: number }) {
 
   return (
     <li className="shrink-0 px-2.5 sm:px-3">
-      <div className="group h-32 w-60 sm:w-64 px-7 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+      {/* No card behind the logo — the marks sit straight on the band, so the
+          white backgrounds baked into several of the source files have been
+          knocked out to transparent. */}
+      <div className="group h-32 w-60 sm:w-64 px-7 flex items-center justify-center transition-transform duration-300 hover:-translate-y-0.5">
         {partner.logo ? (
           /* Every logo gets the same fixed box and object-contain letterboxes
              inside it, so each one grows to fill whichever axis it runs out of
