@@ -129,7 +129,7 @@ export default function AdminSidebar() {
       {/* Opaque white, not translucent: the admin shell's tinted gradient shows
           through a semi-transparent bar and stops it matching the white status
           bar sitting directly above it. */}
-      <header className="md:hidden sticky top-0 z-40 bg-white border-b border-gray-200/70 pt-[env(safe-area-inset-top)]">
+      <header className="md:hidden sticky top-0 z-40 bg-white pt-[env(safe-area-inset-top)]">
         <div className="flex items-center gap-2.5 px-4 h-14">
           <Image src="/icon.png" alt="" width={28} height={28} className="rounded-md shrink-0" />
           <div className="min-w-0 flex-1">
