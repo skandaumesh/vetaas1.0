@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
-import { httpsCallable } from "firebase/functions";
-import { db, storage, functions } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { useAdminAuth } from "@/components/admin/AdminGate";
 import {
   CheckCircle2,
@@ -66,49 +65,6 @@ export default function AdminEventsPage() {
 
   // One-off: move legacy base64 posters out of Firestore into Cloud Storage.
   // The button disappears once no event still holds an embedded image.
-  const [migrating, setMigrating] = useState(false);
-  // Base64 images still to move, plus any left on a storage.googleapis.com URL
-  // that this bucket won't serve (broken by the first migration attempt).
-  const legacyImageCount = events.filter(
-    (e: any) =>
-      typeof e.image === "string" &&
-      (e.image.startsWith("data:") || e.image.includes("storage.googleapis.com"))
-  ).length;
-
-  const migrateImages = async () => {
-    setMigrating(true);
-    try {
-      const fn = httpsCallable<
-        Record<string, never>,
-        {
-          migrated: number;
-          repaired: number;
-          skipped: number;
-          approxKbFreed: number;
-          failures: { id: string; error: string }[];
-        }
-      >(functions, "migrateEventImages");
-      const { data } = await fn({});
-      const parts = [];
-      if (data.migrated) parts.push(`moved ${data.migrated}`);
-      if (data.repaired) parts.push(`fixed ${data.repaired}`);
-      showToast(
-        (parts.length ? `Images: ${parts.join(", ")}.` : "Nothing to do.") +
-          (data.failures.length ? ` ${data.failures.length} failed.` : ""),
-        data.failures.length ? "error" : "success"
-      );
-      if (data.failures.length) console.error("Image migration failures:", data.failures);
-      await fetchEvents();
-    } catch (err) {
-      showToast(
-        `Migration failed: ${err instanceof Error ? err.message : "unknown error"}`,
-        "error"
-      );
-    } finally {
-      setMigrating(false);
-    }
-  };
-
   // Fetch events once the admin is signed in
   useEffect(() => {
     if (user) {
@@ -660,21 +616,6 @@ export default function AdminEventsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {legacyImageCount > 0 && (
-              <button
-                onClick={migrateImages}
-                disabled={migrating}
-                title="Move poster images out of the database into Cloud Storage"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white/70 border border-amber-200 text-amber-700 rounded-lg text-[13px] font-medium hover:bg-amber-50 transition-colors disabled:opacity-60 cursor-pointer"
-              >
-                {migrating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ImageIcon className="w-4 h-4" />
-                )}
-                {migrating ? "Moving…" : `Optimise ${legacyImageCount} image${legacyImageCount === 1 ? "" : "s"}`}
-              </button>
-            )}
             <button
               onClick={openNewForm}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-700 text-white rounded-lg text-[13px] font-medium transition-colors cursor-pointer"

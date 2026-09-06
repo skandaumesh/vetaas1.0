@@ -14,21 +14,30 @@ import {
   FileText,
   LogOut,
   Send,
+  MoreHorizontal,
   Users,
+  X,
 } from "lucide-react";
 
 const NAV = [
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/memberships", label: "Memberships", icon: Users },
+  // `primary` picks the four that get a slot in the phone tab bar. Six tabs
+  // left each one about 60px wide with truncated labels; the rest live behind
+  // "More", which is the pattern a native app would use.
+  { href: "/admin/memberships", label: "Members", icon: Users, primary: true },
+  { href: "/admin/events", label: "Events", icon: Calendar, primary: true },
+  { href: "/admin/forms", label: "Forms", icon: FileText, primary: true },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3, primary: true },
   { href: "/admin/quizzes", label: "Quizzes", icon: ClipboardList },
-  { href: "/admin/forms", label: "Forms", icon: FileText },
   { href: "/admin/broadcast", label: "Broadcast", icon: Send },
-  { href: "/admin/events", label: "Events", icon: Calendar },
 ];
+
+const PRIMARY_NAV = NAV.filter((n) => n.primary);
+const MORE_NAV = NAV.filter((n) => !n.primary);
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) =>
@@ -36,6 +45,13 @@ export default function AdminSidebar() {
     );
     return () => unsubscribe();
   }, []);
+
+  // Dismiss the More sheet once a link inside it has navigated.
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
+
+  const moreActive = MORE_NAV.some((n) => pathname?.startsWith(n.href));
 
   const links = NAV.map(({ href, label, icon: Icon }) => {
     const active = pathname?.startsWith(href);
@@ -50,7 +66,7 @@ export default function AdminSidebar() {
         }`}
       >
         <Icon size={17} className={active ? "text-[#7C3AED]" : ""} />
-        {label}
+        {href === "/admin/memberships" ? "Memberships" : label}
       </Link>
     );
   });
@@ -121,22 +137,6 @@ export default function AdminSidebar() {
               <p className="text-[11px] text-gray-400 truncate">{user.email}</p>
             )}
           </div>
-          <Link
-            href="/"
-            className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-gray-400 active:bg-gray-100"
-            aria-label="View website"
-          >
-            <ExternalLink size={17} />
-          </Link>
-          {user && (
-            <button
-              onClick={() => signOut(auth)}
-              className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-gray-400 active:bg-red-50 active:text-red-500 cursor-pointer"
-              aria-label="Sign out"
-            >
-              <LogOut size={17} />
-            </button>
-          )}
         </div>
       </header>
 
@@ -145,27 +145,103 @@ export default function AdminSidebar() {
         className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/85 backdrop-blur-xl border-t border-white/70 pb-[env(safe-area-inset-bottom)]"
       >
         <ul className="flex">
-          {NAV.map(({ href, label, icon: Icon }) => {
+          {PRIMARY_NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname?.startsWith(href);
             return (
               <li key={href} className="flex-1 min-w-0">
                 <Link
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex flex-col items-center justify-center gap-1 py-2 px-0.5 ${
+                  className={`flex flex-col items-center justify-center gap-1 py-2 ${
                     active ? "text-[#7C3AED]" : "text-gray-400"
                   }`}
                 >
-                  <Icon size={19} strokeWidth={active ? 2.4 : 2} />
-                  <span className="text-[10px] font-bold leading-none truncate max-w-full">
-                    {label}
-                  </span>
+                  <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+                  <span className="text-[10px] font-bold leading-none">{label}</span>
                 </Link>
               </li>
             );
           })}
+          <li className="flex-1 min-w-0">
+            <button
+              onClick={() => setMoreOpen(true)}
+              aria-expanded={moreOpen}
+              className={`w-full flex flex-col items-center justify-center gap-1 py-2 cursor-pointer ${
+                moreActive ? "text-[#7C3AED]" : "text-gray-400"
+              }`}
+            >
+              <MoreHorizontal size={20} strokeWidth={moreActive ? 2.4 : 2} />
+              <span className="text-[10px] font-bold leading-none">More</span>
+            </button>
+          </li>
         </ul>
       </nav>
+
+      {/* More sheet: the sections that didn't earn a tab, plus the account
+          actions that used to crowd the title bar. */}
+      {moreOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex items-end">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setMoreOpen(false)}
+            aria-hidden
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="More admin sections"
+            className="relative w-full bg-white rounded-t-3xl border-t border-white/70 shadow-xl pb-[calc(1rem+env(safe-area-inset-bottom))]"
+          >
+            <div className="flex items-center justify-between px-5 pt-4 pb-2">
+              <p className="text-sm font-bold text-[#111827]">More</p>
+              <button
+                onClick={() => setMoreOpen(false)}
+                aria-label="Close"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 active:bg-gray-100 cursor-pointer"
+              >
+                <X size={17} />
+              </button>
+            </div>
+
+            <div className="px-3 pb-2 space-y-1">
+              {MORE_NAV.map(({ href, label, icon: Icon }) => {
+                const active = pathname?.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold ${
+                      active ? "bg-gray-100 text-[#111827]" : "text-gray-600 active:bg-gray-50"
+                    }`}
+                  >
+                    <Icon size={18} className={active ? "text-[#7C3AED]" : "text-gray-400"} />
+                    {label}
+                  </Link>
+                );
+              })}
+
+              <div className="pt-1 mt-1 border-t border-gray-100">
+                <Link
+                  href="/"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-600 active:bg-gray-50"
+                >
+                  <ExternalLink size={18} className="text-gray-400" />
+                  View website
+                </Link>
+                {user && (
+                  <button
+                    onClick={() => signOut(auth)}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-600 active:bg-red-50 active:text-red-500 cursor-pointer"
+                  >
+                    <LogOut size={18} className="text-gray-400" />
+                    <span className="text-left">Sign out</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </>
   );
