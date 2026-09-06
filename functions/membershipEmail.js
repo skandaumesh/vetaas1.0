@@ -5,6 +5,7 @@
 const LINKS = {
   calendar: "https://www.vetaas.in/events",
   guide: "https://www.vetaas.in/services#membership",
+  status: "https://www.vetaas.in/membership",
   maps: "https://maps.app.goo.gl/eMUJokfKE8opyhhz5",
   phone: "+91 89510 04160",
   phoneHref: "+918951004160",
@@ -25,6 +26,9 @@ MEMBERSHIP DETAILS
 Membership ID: ${order.membershipId ?? "-"}
 Plan: ${planNames(order)}
 Validity: ${order.validity ?? "-"}
+
+Check your membership any time at ${LINKS.status} — you'll need the
+Membership ID above and this email address.
 
 QUICK LINKS
 Monthly Calendar: ${LINKS.calendar}
@@ -81,6 +85,12 @@ function buildEmailHtml(order) {
                 </table>
               </td></tr>
             </table>
+
+            <p style="margin:0 0 24px;font-size:13px;color:#6b7280;line-height:1.6;">
+              Check your membership any time at
+              <a href="${LINKS.status}" style="color:#7C3AED;font-weight:bold;text-decoration:none;">vetaas.in/membership</a>
+              — you'll need the Membership ID above and this email address.
+            </p>
 
             <p style="margin:0 0 10px;font-size:11px;letter-spacing:1px;color:#6b7280;font-weight:bold;">QUICK LINKS</p>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">

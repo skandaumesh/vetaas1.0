@@ -89,7 +89,8 @@ exports.sendMail = onDocumentCreated(
 // Daily at 09:00 IST: queue an expiry-reminder email for every approved
 // membership that expires within the next 3 days and hasn't been reminded.
 // Writing to `mail` hands delivery to the sendMail trigger above.
-const REMINDER_WINDOW_DAYS = 3;
+// Renewal nudge goes out when a membership has 2 days or fewer left.
+const REMINDER_WINDOW_DAYS = 2;
 
 exports.sendExpiryReminders = onSchedule(
   { schedule: "every day 09:00", timeZone: "Asia/Kolkata", region: "us-central1" },
@@ -125,6 +126,8 @@ exports.sendExpiryReminders = onSchedule(
             `A friendly reminder that ${o.childName}'s Vetaas membership expires on ${dateStr}.\n\n` +
             `To continue without a break, renew anytime at https://www.vetaas.in/services#membership ` +
             `or WhatsApp us at +91 89510 04160 — we'll take care of the rest.\n\n` +
+            `You can check the membership any time at https://www.vetaas.in/membership ` +
+            `using Membership ID ${o.membershipId ?? "-"} and this email address.\n\n` +
             `We'd love to keep seeing ${o.childName} at the studio!\n\n` +
             `Warm regards,\nVetaas Education Foundation\nwww.vetaas.in`,
         },
