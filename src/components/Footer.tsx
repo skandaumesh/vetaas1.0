@@ -117,6 +117,19 @@ export default function Footer() {
           </div>
           <p>Bangalore, India 🇮🇳</p>
         </div>
+
+        {/* Studio credit */}
+        <div className="pt-5 text-center text-sm text-gray-500 font-medium">
+          Developed by{" "}
+          <a
+            href="https://onezerolabs.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-[#111827] hover:text-[#7C3AED] transition-colors"
+          >
+            OneZeroLabs
+          </a>
+        </div>
       </div>
     </footer>
   );
