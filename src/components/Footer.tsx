@@ -109,7 +109,19 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="pt-8 border-t border-black/10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500 font-medium">
-          <p>&copy; {new Date().getFullYear()} Vetaas Education Foundation. All rights reserved.</p>
+          <p className="text-center md:text-left">
+            &copy; {new Date().getFullYear()} Vetaas Education Foundation. All rights reserved.
+            <span className="mx-1.5 text-gray-300">·</span>
+            Developed by{" "}
+            <a
+              href="https://onezerolabs.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-[#111827] hover:text-[#7C3AED] transition-colors"
+            >
+              OneZeroLabs
+            </a>
+          </p>
           <div className="flex items-center gap-6">
             <Link href="/find-us" className="hover:text-[#268bff] transition-colors">Find Us</Link>
             <Link href="/privacy" className="hover:text-[#268bff] transition-colors">Privacy Policy</Link>
@@ -118,18 +130,6 @@ export default function Footer() {
           <p>Bangalore, India 🇮🇳</p>
         </div>
 
-        {/* Studio credit */}
-        <div className="pt-5 text-center text-sm text-gray-500 font-medium">
-          Developed by{" "}
-          <a
-            href="https://onezerolabs.in"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-bold text-[#111827] hover:text-[#7C3AED] transition-colors"
-          >
-            OneZeroLabs
-          </a>
-        </div>
       </div>
     </footer>
   );
