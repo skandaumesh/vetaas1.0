@@ -107,34 +107,66 @@ export default function AdminSidebar() {
         </div>
       </aside>
 
-      {/* Mobile top bar */}
-      <div className="md:hidden sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-white/70 px-4 py-3 flex items-center gap-2">
-        <Image src="/icon.png" alt="Vetaas" width={28} height={28} className="rounded-md" />
-        <div className="flex gap-1 flex-1 justify-center">
-          {NAV.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold ${
-                pathname?.startsWith(href)
-                  ? "bg-[#111827] text-white"
-                  : "text-gray-500 hover:bg-gray-100"
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-        {user && (
-          <button
-            onClick={() => signOut(auth)}
-            className="text-gray-400 hover:text-red-500 cursor-pointer"
-            aria-label="Sign out"
+      {/* Mobile: a compact title bar plus a bottom tab bar, so the panel
+          behaves like an installed app rather than a cramped desktop nav.
+          Six text links in one row overflowed even a 390px screen. */}
+      <header className="md:hidden sticky top-0 z-40 bg-white/75 backdrop-blur-xl border-b border-white/70 pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center gap-2.5 px-4 h-14">
+          <Image src="/icon.png" alt="" width={28} height={28} className="rounded-md shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="font-extrabold text-[#111827] text-sm leading-tight truncate">
+              {NAV.find((n) => pathname?.startsWith(n.href))?.label ?? "Admin"}
+            </p>
+            {user && (
+              <p className="text-[11px] text-gray-400 truncate">{user.email}</p>
+            )}
+          </div>
+          <Link
+            href="/"
+            className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-gray-400 active:bg-gray-100"
+            aria-label="View website"
           >
-            <LogOut size={17} />
-          </button>
-        )}
-      </div>
+            <ExternalLink size={17} />
+          </Link>
+          {user && (
+            <button
+              onClick={() => signOut(auth)}
+              className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-gray-400 active:bg-red-50 active:text-red-500 cursor-pointer"
+              aria-label="Sign out"
+            >
+              <LogOut size={17} />
+            </button>
+          )}
+        </div>
+      </header>
+
+      <nav
+        aria-label="Admin sections"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/85 backdrop-blur-xl border-t border-white/70 pb-[env(safe-area-inset-bottom)]"
+      >
+        <ul className="flex">
+          {NAV.map(({ href, label, icon: Icon }) => {
+            const active = pathname?.startsWith(href);
+            return (
+              <li key={href} className="flex-1 min-w-0">
+                <Link
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex flex-col items-center justify-center gap-1 py-2 px-0.5 ${
+                    active ? "text-[#7C3AED]" : "text-gray-400"
+                  }`}
+                >
+                  <Icon size={19} strokeWidth={active ? 2.4 : 2} />
+                  <span className="text-[10px] font-bold leading-none truncate max-w-full">
+                    {label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
     </>
   );
 }

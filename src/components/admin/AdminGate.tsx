@@ -117,7 +117,10 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
   return (
     <AdminAuthContext.Provider value={{ user }}>
       <AdminSidebar />
-      <div className="md:pl-60">{children}</div>
+      {/* pb clears the fixed mobile tab bar (plus the home indicator on iOS). */}
+      <div className="md:pl-60 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        {children}
+      </div>
     </AdminAuthContext.Provider>
   );
 }
