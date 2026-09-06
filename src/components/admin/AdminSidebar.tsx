@@ -23,10 +23,10 @@ const NAV = [
   // `primary` picks the four that get a slot in the phone tab bar. Six tabs
   // left each one about 60px wide with truncated labels; the rest live behind
   // "More", which is the pattern a native app would use.
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3, primary: true },
   { href: "/admin/memberships", label: "Members", icon: Users, primary: true },
   { href: "/admin/events", label: "Events", icon: Calendar, primary: true },
   { href: "/admin/forms", label: "Forms", icon: FileText, primary: true },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3, primary: true },
   { href: "/admin/quizzes", label: "Quizzes", icon: ClipboardList },
   { href: "/admin/broadcast", label: "Broadcast", icon: Send },
 ];
