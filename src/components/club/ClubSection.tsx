@@ -11,7 +11,7 @@ const CLUBS = [
     tag: "Adults only",
     description:
       "A cosy circle for adult readers — we pick a book, read at our own pace, and meet to talk about what stayed with us.",
-    whatsapp: "https://chat.whatsapp.com/REPLACE_WITH_BOOK_CLUB_LINK",
+    whatsapp: "https://chat.whatsapp.com/HRMTL2a88UBFF3R7KTcGAG",
     accent: "#7C3AED",
     tint: "#f5f3ff",
     icon: BookOpen,
