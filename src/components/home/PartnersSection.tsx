@@ -12,6 +12,12 @@ type Partner = {
    * back to a numbered placeholder mark.
    */
   logo?: string;
+  /**
+   * Optional size multiplier. Very wide wordmarks hit the tile's width limit
+   * long before its height, so they end up shorter than the squarer marks
+   * beside them; this nudges those back up to a comparable weight.
+   */
+  scale?: number;
 };
 
 /**
@@ -32,7 +38,7 @@ const partners: Partner[] = [
   { name: "Gubbachi Learning Community", logo: "/collab/trimmed/gubbacchi.png" },
   { name: "Brainy Stars", logo: "/collab/trimmed/brainystars-v2.png" },
   { name: "iGenius", logo: "/collab/trimmed/igenius-v2.png" },
-  { name: "10Labs", logo: "/collab/trimmed/onezerolabs-v2.png" },
+  { name: "10Labs", logo: "/collab/trimmed/onezerolabs-v2.png", scale: 1.3 },
 ];
 
 const accents = ["#7C3AED", "#00CDBA", "#FF5C7A", "#268bff"];
@@ -51,14 +57,19 @@ function PartnerTile({ partner, index }: { partner: Partner; index: number }) {
              inside it, so each one grows to fill whichever axis it runs out of
              first. A max-height alone is only a ceiling — small source files
              like iGenius (67x92) would sit at their own size and read tiny. */
-          <Image
-            src={partner.logo}
-            alt={partner.name}
-            width={280}
-            height={140}
-            sizes="256px"
-            className="h-24 w-full object-contain rounded-lg transition duration-300 group-hover:scale-[1.04]"
-          />
+          <span
+            className="flex w-full items-center justify-center"
+            style={partner.scale ? { transform: `scale(${partner.scale})` } : undefined}
+          >
+            <Image
+              src={partner.logo}
+              alt={partner.name}
+              width={280}
+              height={140}
+              sizes="256px"
+              className="h-24 w-full object-contain rounded-lg transition duration-300 group-hover:scale-[1.04]"
+            />
+          </span>
         ) : (
           <div className="flex items-center gap-3">
             <span
