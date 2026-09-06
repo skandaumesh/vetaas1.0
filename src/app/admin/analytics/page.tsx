@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "@/lib/firebase";
 import { useAdminAuth } from "@/components/admin/AdminGate";
@@ -87,14 +87,36 @@ function niceCeil(n: number) {
   return 10 * p;
 }
 
+/**
+ * The chart draws in real pixels: the viewBox matches the measured container
+ * width, so nothing is letterboxed. A fixed 760-wide viewBox scaled down to a
+ * phone drew the plot only ~84px tall inside a 200px box, leaving most of the
+ * card empty.
+ *
+ * Readout is pointer-driven rather than an SVG <title>, because title tooltips
+ * need a hover and never appear on a touch screen.
+ */
 function VisitorsLineChart({ series }: { series: { date: string; users: number }[] }) {
-  const W = 760;
-  const H = 200;
-  const padL = 36;
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(760);
+  const [active, setActive] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setWidth(Math.max(260, Math.round(entry.contentRect.width)))
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const H = 230;
+  const padL = 34;
   const padR = 12;
-  const padT = 14;
-  const padB = 28;
-  const innerW = W - padL - padR;
+  const padT = 16;
+  const padB = 30;
+  const innerW = Math.max(1, width - padL - padR);
   const innerH = H - padT - padB;
 
   const ceil = niceCeil(Math.max(...series.map((s) => s.users), 1));
@@ -105,77 +127,102 @@ function VisitorsLineChart({ series }: { series: { date: string; users: number }
   const line = series.map((s, i) => `${x(i)},${y(s.users)}`).join(" ");
   const area = `${padL},${padT + innerH} ${line} ${x(series.length - 1)},${padT + innerH}`;
   const ticks = [0, ceil / 2, ceil];
-  // Roughly six labels, whatever the range length.
-  const labelEvery = Math.max(1, Math.ceil(series.length / 6));
+  // Fewer date labels on a narrow screen, or they collide.
+  const labelEvery = Math.max(1, Math.ceil(series.length / Math.max(3, Math.floor(width / 78))));
+
+  const pick = (clientX: number) => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect || series.length === 0) return;
+    const ratio = (clientX - rect.left - padL) / innerW;
+    const i = Math.round(ratio * (series.length - 1));
+    setActive(Math.max(0, Math.min(series.length - 1, i)));
+  };
+
+  const point = active !== null ? series[active] : null;
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[200px]" role="img">
-      <defs>
-        <linearGradient id="visitorsFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
-        </linearGradient>
-      </defs>
+    <div ref={wrapRef} className="relative w-full select-none" style={{ height: H }}>
+      <svg
+        viewBox={`0 0 ${width} ${H}`}
+        width={width}
+        height={H}
+        className="block touch-none"
+        role="img"
+        aria-label="Visitors per day"
+        onPointerDown={(e) => pick(e.clientX)}
+        onPointerMove={(e) => {
+          if (e.pointerType === "mouse" || e.buttons > 0) pick(e.clientX);
+        }}
+        onPointerLeave={() => setActive(null)}
+      >
+        <defs>
+          <linearGradient id="visitorsFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
+          </linearGradient>
+        </defs>
 
-      {ticks.map((t) => (
-        <g key={t}>
-          <line
-            x1={padL}
-            x2={W - padR}
-            y1={y(t)}
-            y2={y(t)}
-            stroke="#e2e8f0"
-            strokeWidth="1"
-          />
-          <text x={padL - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="#94a3b8">
-            {t}
-          </text>
-        </g>
-      ))}
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={padL} x2={width - padR} y1={y(t)} y2={y(t)} stroke="#e2e8f0" strokeWidth="1" />
+            <text x={padL - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="#94a3b8">
+              {t}
+            </text>
+          </g>
+        ))}
 
-      <polygon points={area} fill="url(#visitorsFill)" />
-      <polyline
-        points={line}
-        fill="none"
-        stroke="#7c3aed"
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
+        <polygon points={area} fill="url(#visitorsFill)" />
+        <polyline
+          points={line}
+          fill="none"
+          stroke="#7c3aed"
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
 
-      {series.map((s, i) => (
-        <g key={s.date}>
-          {series.length <= 31 && (
-            <circle cx={x(i)} cy={y(s.users)} r="2.5" fill="#7c3aed" />
-          )}
-          {/* Invisible hit area so hovering anywhere in the column works. */}
-          <rect
-            x={x(i) - innerW / Math.max(series.length, 1) / 2}
-            y={padT}
-            width={innerW / Math.max(series.length, 1)}
-            height={innerH}
-            fill="transparent"
-          >
-            <title>{`${shortDate(s.date)}: ${s.users} visitor${
-              s.users === 1 ? "" : "s"
-            }`}</title>
-          </rect>
-          {i % labelEvery === 0 && (
-            <text
-              x={x(i)}
-              y={H - 8}
-              textAnchor="middle"
-              fontSize="11"
-              fill="#94a3b8"
-            >
+        {series.length <= 31 &&
+          series.map((s, i) => <circle key={s.date} cx={x(i)} cy={y(s.users)} r="2.5" fill="#7c3aed" />)}
+
+        {point && active !== null && (
+          <g>
+            <line
+              x1={x(active)}
+              x2={x(active)}
+              y1={padT}
+              y2={padT + innerH}
+              stroke="#7c3aed"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+            />
+            <circle cx={x(active)} cy={y(point.users)} r="5" fill="#7c3aed" stroke="#fff" strokeWidth="2" />
+          </g>
+        )}
+
+        {series.map((s, i) =>
+          i % labelEvery === 0 ? (
+            <text key={`l-${s.date}`} x={x(i)} y={H - 9} textAnchor="middle" fontSize="11" fill="#94a3b8">
               {shortDate(s.date)}
             </text>
-          )}
-        </g>
-      ))}
-    </svg>
+          ) : null
+        )}
+      </svg>
+
+      {point && active !== null && (
+        <div
+          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg bg-slate-900 px-2.5 py-1.5 text-center shadow-lg"
+          style={{ left: Math.min(Math.max(x(active), 52), width - 52), top: y(point.users) - 10 }}
+        >
+          <p className="text-[11px] font-semibold text-white whitespace-nowrap tabular-nums">
+            {point.users} visitor{point.users === 1 ? "" : "s"}
+          </p>
+          <p className="text-[10px] text-slate-400 whitespace-nowrap">{shortDate(point.date)}</p>
+        </div>
+      )}
+    </div>
   );
 }
+
 
 export default function AdminAnalyticsPage() {
   const { user } = useAdminAuth();
@@ -183,6 +230,8 @@ export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Tapped hour bar — title tooltips never show on a touch screen.
+  const [activeHour, setActiveHour] = useState<number | null>(null);
 
   const load = useCallback(async (range: number) => {
     setLoading(true);
@@ -307,28 +356,38 @@ export default function AdminAnalyticsPage() {
                 <p className="text-[13px] font-medium text-slate-400">
                   When people visit
                 </p>
-                <p className="text-[12px] text-slate-400">
-                  {peakHour.sessions > 0
-                    ? `Busiest around ${hourLabel(peakHour.hour)}`
-                    : "No data yet"}
+                <p className="text-[12px] text-slate-400 tabular-nums">
+                  {activeHour !== null
+                    ? `${hourLabel(activeHour)} · ${fmtNum(
+                        hourSeries[activeHour].sessions
+                      )} visit${hourSeries[activeHour].sessions === 1 ? "" : "s"}`
+                    : peakHour.sessions > 0
+                      ? `Busiest around ${hourLabel(peakHour.hour)}`
+                      : "No data yet"}
                 </p>
               </div>
               <div className="flex items-end gap-[3px] h-28">
-                {hourSeries.map((h) => (
-                  <div key={h.hour} className="flex-1 flex flex-col justify-end h-full">
-                    <div
-                      className={`w-full rounded-t transition-colors min-h-[2px] ${
-                        h.hour === peakHour.hour && peakHour.sessions > 0
-                          ? "bg-violet-600"
-                          : "bg-violet-500/35 hover:bg-violet-500/60"
-                      }`}
-                      style={{ height: `${(h.sessions / peakHourSessions) * 100}%` }}
-                      title={`${hourLabel(h.hour)}: ${h.sessions} visit${
-                        h.sessions === 1 ? "" : "s"
-                      }`}
-                    />
-                  </div>
-                ))}
+                {hourSeries.map((h) => {
+                  const highlighted =
+                    activeHour === h.hour ||
+                    (activeHour === null && h.hour === peakHour.hour && peakHour.sessions > 0);
+                  return (
+                    <button
+                      key={h.hour}
+                      type="button"
+                      onClick={() => setActiveHour(activeHour === h.hour ? null : h.hour)}
+                      aria-label={`${hourLabel(h.hour)}: ${h.sessions} visits`}
+                      className="flex-1 flex flex-col justify-end h-full cursor-pointer"
+                    >
+                      <span
+                        className={`w-full rounded-t transition-colors min-h-[2px] ${
+                          highlighted ? "bg-violet-600" : "bg-violet-500/35 hover:bg-violet-500/60"
+                        }`}
+                        style={{ height: `${(h.sessions / peakHourSessions) * 100}%` }}
+                      />
+                    </button>
+                  );
+                })}
               </div>
               <div className="flex justify-between mt-2 text-[11px] text-slate-400 tabular-nums">
                 {[0, 6, 12, 18, 23].map((h) => (
