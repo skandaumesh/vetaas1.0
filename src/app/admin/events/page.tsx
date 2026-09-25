@@ -19,7 +19,8 @@ import {
   Crop,
   Image as ImageIcon,
   Trash2,
-  Edit2
+  Edit2,
+  Copy
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ImageCropper from "@/components/admin/ImageCropper";
@@ -379,6 +380,57 @@ export default function AdminEventsPage() {
     setFormOpen(true);
   };
 
+  const handleDuplicateClick = (event: any) => {
+    // Pre-fill the form with the event's data but clear dates
+    // so the admin sets fresh ones for the new occurrence.
+    setEditingEventId(null); // Create mode, not edit
+
+    // Parse back start and end time from "10:00 AM - 1:00 PM"
+    let parsedStart = "";
+    let parsedEnd = "";
+    if (event.timeSlot) {
+      const parts = event.timeSlot.split(" - ");
+      if (parts.length === 2) {
+        const parseTo24 = (timeStr: string) => {
+          const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+          if (!match) return "";
+          let h = parseInt(match[1], 10);
+          const m = match[2];
+          const isPM = match[3].toUpperCase() === "PM";
+          if (isPM && h < 12) h += 12;
+          if (!isPM && h === 12) h = 0;
+          return `${h.toString().padStart(2, "0")}:${m}`;
+        };
+        parsedStart = parseTo24(parts[0]);
+        parsedEnd = parseTo24(parts[1]);
+      }
+    }
+
+    setFormData({
+      title: event.title || "",
+      date: "",       // Clear — admin picks the new date
+      endDate: "",    // Clear
+      startTime: parsedStart,
+      endTime: parsedEnd,
+      location: event.location || "",
+      mapUrl: event.mapUrl || "",
+      highlightsUrl: "",  // Clear — new event hasn't happened yet
+      registrationUrl: event.registrationUrl || "",
+      manualImageUrl: event.image || ""
+    });
+    if (event.image) {
+      setImagePreview(event.image);
+    } else {
+      setImagePreview(null);
+    }
+    setImageFile(null);
+    setOriginalFile(null);
+    setCropFile(null);
+    setImageAspect(null);
+    setFormOpen(true);
+    showToast("Event duplicated — set new dates and save.", "info");
+  };
+
   const closeForm = () => {
     setFormOpen(false);
     setEditingEventId(null);
@@ -559,18 +611,28 @@ export default function AdminEventsPage() {
         <div className="flex justify-end gap-2 border-t border-slate-100/80 pt-3 pr-2 pl-2">
           <div className="flex items-center gap-2 mt-4 ml-auto">
             <button
+              onClick={() => handleDuplicateClick(event)}
+              className="px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-600 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-xs font-semibold uppercase tracking-wide"
+              title="Host Again"
+            >
+              <Copy size={14} />
+              Host Again
+            </button>
+            <button
               onClick={() => handleEditClick(event)}
-              className="p-2.5 bg-blue-50 hover:bg-blue-100 text-blue-500 rounded-xl transition duration-200 shadow-sm flex items-center justify-center cursor-pointer"
+              className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-xs font-semibold uppercase tracking-wide"
               title="Edit Event"
             >
-              <Edit2 size={16} />
+              <Edit2 size={14} />
+              Edit
             </button>
             <button
               onClick={() => handleDeleteClick(event.id)}
-              className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-xl transition duration-200 shadow-sm flex items-center justify-center cursor-pointer"
+              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-1.5 cursor-pointer text-xs font-semibold uppercase tracking-wide"
               title="Delete Event"
             >
-              <Trash2 size={16} />
+              <Trash2 size={14} />
+              Delete
             </button>
           </div>
         </div>
