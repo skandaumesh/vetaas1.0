@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
+import { fetchEvents } from '@/lib/events-seo';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://www.vetaas.in';
 
   // All publicly indexable routes. Primary nav destinations get the highest
@@ -28,7 +29,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Services dropdown + Find Us — secondary nav links.
   const secondaryNav = ['/children', '/teachers', '/parents', '/find-us'];
 
-  return routes.map((route) => {
+  // Each event now has its own page, which is what people share, so list them
+  // too. A cancelled event is dropped by fetchEvents.
+  const events = await fetchEvents();
+  const eventPages: MetadataRoute.Sitemap = events.map((event) => ({
+    url: `${baseUrl}/events/${event.id}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  const pages = routes.map((route) => {
     let priority = 0.8;
     let changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'] = 'monthly';
 
@@ -54,4 +65,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority,
     };
   });
+
+  return [...pages, ...eventPages];
 }
