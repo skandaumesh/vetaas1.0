@@ -27,6 +27,27 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import ImageCropper from "@/components/admin/ImageCropper";
 
+/** "14:30" -> 870 minutes past midnight. */
+const minutesFrom24h = (value?: string) => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec((value ?? "").trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+};
+
+/** "11:00 AM - 1:00 PM" -> the same, as a pair of minute values. */
+const minutesFromSlot = (slot?: string) => {
+  const m = /(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(slot ?? "");
+  if (!m) return null;
+  const to24 = (h: string, min: string, ampm: string) => {
+    let hour = Number(h) % 12;
+    if (ampm.toUpperCase() === "PM") hour += 12;
+    return hour * 60 + Number(min);
+  };
+  return {
+    start: to24(m[1], m[2], m[3]),
+    end: to24(m[4], m[5], m[6]),
+  };
+};
+
 interface Toast {
   id: number;
   message: string;
@@ -127,6 +148,33 @@ export default function AdminEventsPage() {
 
   const mapUrlInvalid =
     !!formData.mapUrl.trim() && !/^https:[/][/]\S+$/i.test(formData.mapUrl.trim());
+
+  /**
+   * Events already booked over the same dates and hours, the way a calendar
+   * warns before double-booking a room. Two events on the same day with no
+   * times set count as a clash; with times, only an actual overlap does.
+   */
+  const clashes = useMemo(() => {
+    const start = formData.date.trim();
+    if (!start) return [];
+    const end = formData.endDate.trim() || start;
+    const from = minutesFrom24h(formData.startTime);
+    const to = minutesFrom24h(formData.endTime);
+
+    return events.filter((other) => {
+      if (other.id === editingEventId || other.cancelled) return false;
+      const otherStart = String(other.date ?? "").trim();
+      if (!otherStart) return false;
+      const otherEnd = String(other.endDate ?? "").trim() || otherStart;
+      // Dates have to overlap before the hours matter.
+      if (start > otherEnd || otherStart > end) return false;
+
+      const otherSlot = minutesFromSlot(other.timeSlot);
+      // Either side without times takes the whole day.
+      if (from === null || to === null || !otherSlot) return true;
+      return from < otherSlot.end && otherSlot.start < to;
+    });
+  }, [formData.date, formData.endDate, formData.startTime, formData.endTime, events, editingEventId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -1075,16 +1123,48 @@ export default function AdminEventsPage() {
                 ))}
               </datalist>
 
+              {clashes.length > 0 && (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3.5 mt-3">
+                  <p className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    {clashes.length === 1
+                      ? "Something else is booked at this time"
+                      : `${clashes.length} other events are booked at this time`}
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {clashes.map((other: any) => (
+                      <li key={other.id} className="text-xs text-amber-800">
+                        <span className="font-semibold">{other.title}</span>
+                        {" — "}
+                        {other.date}
+                        {other.endDate && other.endDate !== other.date ? ` to ${other.endDate}` : ""}
+                        {other.timeSlot ? `, ${other.timeSlot}` : " (no time set)"}
+                        {other.location ? ` · ${other.location}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-[11px] text-amber-700 mt-2">
+                    Change the date or time, or save anyway if both are meant to run together.
+                  </p>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={uploading}
-                className="w-full py-3.5 bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 duration-200 text-sm mt-3"
+                className={`w-full py-3.5 text-white rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 duration-200 text-sm mt-3 ${
+                  clashes.length > 0
+                    ? "bg-amber-600 hover:bg-amber-700"
+                    : "bg-[#7C3AED] hover:bg-[#6D28D9]"
+                }`}
               >
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Saving Event...
                   </>
+                ) : clashes.length > 0 ? (
+                  editingEventId ? "Update anyway" : "Save anyway"
                 ) : (
                   editingEventId ? "Update Event" : "Save Event"
                 )}
